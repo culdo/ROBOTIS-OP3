@@ -62,6 +62,8 @@
 #include "op3_online_walking_module_msgs/Step2D.h"
 #include "op3_online_walking_module_msgs/Step2DArray.h"
 
+#define DEG2RAD   (M_PI / 180.0)
+
 namespace robotis_op
 {
 
@@ -120,6 +122,8 @@ public:
   void parseBalanceGainData(const std::string &path);
   void parseJointFeedbackGainData(const std::string &path);
   void parseJointFeedforwardGainData(const std::string &path);
+  // AdvAiLab added
+  void parseIniPoseData(const std::string &path);
 
   /* ROS Publish Functions */
   void publishStatusMsg(unsigned int type, std::string msg);

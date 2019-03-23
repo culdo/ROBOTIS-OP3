@@ -561,10 +561,46 @@ void OnlineWalkingModule::rightFootForceTorqueOutputCallback(const geometry_msgs
   r_foot_ft_data_msg_.torque.z = r_foot_Tz_Nm;
 }
 
+void OnlineWalkingModule::parseIniPoseData(const std::string &path)
+{
+  YAML::Node doc;
+  try
+  {
+    // load yaml
+    doc = YAML::LoadFile(path.c_str());
+  } catch (const std::exception& e)
+  {
+    ROS_ERROR_STREAM("Fail to load yaml file. [" << path << "]");
+    return;
+  }
+
+  op3_online_walking_module_msgs::JointPose msg;
+
+  // parse movement time
+  double mov_time = doc["mov_time"].as<double>();
+  msg.mov_time = mov_time;
+
+  // parse target pose
+  YAML::Node tar_pose_node = doc["tar_pose"];
+  for (YAML::iterator it = tar_pose_node.begin(); it != tar_pose_node.end(); ++it)
+  {
+    std::string joint_name = it->first.as<std::string>();
+    double value = it->second.as<double>();
+
+    msg.pose.name.push_back(joint_name);
+    msg.pose.position.push_back(value * DEG2RAD);
+  }
+
+  goalJointPoseCallback( msg );
+}
+
 void OnlineWalkingModule::setResetBodyCallback(const std_msgs::Bool::ConstPtr& msg)
 {
   if (msg->data == true)
   {
+    std::string ini_pose_path = ros::package::getPath(ROS_PACKAGE_NAME) + "/config/init_pose.yaml";
+    parseIniPoseData(ini_pose_path);
+    
     des_body_offset_[0] = 0.0;
     des_body_offset_[1] = 0.0;
     des_body_offset_[2] = 0.0;
@@ -1702,6 +1738,9 @@ void OnlineWalkingModule::stop()
   wholebody_initialize_       = false;
   walking_initialize_         = false;
   balance_control_initialize_ = false;
+
+  goal_balance_gain_ratio_[0] = 0.0;
+  balance_type_ = OFF;
 
   control_type_ = NONE;
 
